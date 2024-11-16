@@ -34,7 +34,7 @@ export const clientColumns: ColumnDef<Client>[] = [
   },
   {
     header: "Ações",
-    cell: ({ row: { original: client } }) => (
+    cell: () => (
       <Button variant={"ghost"} size={"icon"}>
         <RibbonIcon />
       </Button>
