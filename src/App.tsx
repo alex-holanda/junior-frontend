@@ -5,6 +5,8 @@ import { Button } from "./components/ui/button";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { DataTable } from "./components/ui/data-table";
+import { clientColumns } from "./data-columns";
 
 const formSchema = z.object({
   email: z.string().trim().email(),
@@ -42,16 +44,21 @@ function App() {
 
   useEffect(() => {
     async function getClients() {
-      const response = await axios.get<Client[]>(
-        "https://junior-app-o9ku.onrender.com/client",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      try {
+        const response = await axios.get<Client[]>(
+          "https://junior-app-o9ku.onrender.com/client",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-      setClients(response.data);
+        setClients(response.data);
+      } catch (error) {
+        localStorage.removeItem("access_token");
+        setToken(null);
+      }
     }
 
     getClients();
@@ -61,11 +68,14 @@ function App() {
     <>
       {token ? (
         <>
-          <h1>Clientes</h1>
+          <div className="flex flex-col space-y-6 bg-gray-100 min-h-screen p-6">
+            <div className="flex justify-between">
+              <h1 className="text-2xl font-bold">Clientes</h1>
+              <Button>Adicionar cliente</Button>
+            </div>
 
-          {clients?.map((client) => (
-            <p key={client.id}>{client.name}</p>
-          ))}
+            {clients && <DataTable data={clients} columns={clientColumns} />}
+          </div>
         </>
       ) : (
         <div className="bg-gray-100 flex items-center justify-center min-h-screen">
