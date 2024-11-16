@@ -1,35 +1,124 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import axios from "axios";
+import { Client } from "./client";
+import { useEffect, useState } from "react";
+import { Button } from "./components/ui/button";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+
+const formSchema = z.object({
+  email: z.string().trim().email(),
+  password: z.string().trim().min(6),
+});
+
+type FormSchema = z.infer<typeof formSchema>;
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [token, setToken] = useState(
+    () => localStorage.getItem("access_token") || null
+  );
+  const [clients, setClients] = useState<Client[]>();
+
+  const form = useForm<FormSchema>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  async function onSubmit(data: FormSchema) {
+    const formData = new FormData();
+    formData.append("username", data.email);
+    formData.append("password", data.password);
+
+    const response = await axios.post(
+      "https://junior-app-o9ku.onrender.com/token",
+      formData
+    );
+    localStorage.setItem("access_token", response.data.access_token);
+    setToken(response.data.access_token);
+  }
+
+  useEffect(() => {
+    async function getClients() {
+      const response = await axios.get<Client[]>(
+        "https://junior-app-o9ku.onrender.com/client",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setClients(response.data);
+    }
+
+    getClients();
+  }, []);
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      {token ? (
+        <>
+          <h1>Clientes</h1>
+
+          {clients?.map((client) => (
+            <p key={client.id}>{client.name}</p>
+          ))}
+        </>
+      ) : (
+        <div className="bg-gray-100 flex items-center justify-center min-h-screen">
+          <div className="bg-white p-6 rounded-lg w-full max-w-sm">
+            <h1 className="text-2xl font-bold mb-4 text-gray-800">Login</h1>
+            <form
+              id="loginForm"
+              className="space-y-4"
+              onSubmit={form.handleSubmit(onSubmit)}
+            >
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  E-mail
+                </label>
+                <input
+                  type="text"
+                  {...form.register("email")}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+                {form.formState.errors && (
+                  <p>{form.formState.errors.email?.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Senha
+                </label>
+                <input
+                  type="password"
+                  {...form.register("password")}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+                {form.formState.errors && (
+                  <p>{form.formState.errors.password?.message}</p>
+                )}
+              </div>
+
+              <Button className="w-full" type="submit">
+                Login
+              </Button>
+            </form>
+          </div>
+        </div>
+      )}
     </>
-  )
+  );
 }
 
-export default App
+export default App;
