@@ -19,7 +19,7 @@ function App() {
   const [token, setToken] = useState(
     () => localStorage.getItem("access_token") || null
   );
-  const [clients, setClients] = useState<Client[]>();
+  const [clients, setClients] = useState<Client[]>([]);
 
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
@@ -74,7 +74,7 @@ function App() {
               <Button>Adicionar cliente</Button>
             </div>
 
-            {clients && <DataTable data={clients} columns={clientColumns} />}
+            <DataTable data={clients} columns={clientColumns} />
           </div>
         </>
       ) : (
